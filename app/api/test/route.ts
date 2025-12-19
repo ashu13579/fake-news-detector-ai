@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     // Try to initialize and make a simple call
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
     
     const result = await model.generateContent('Say "API key is working" in JSON format: {"status": "working"}')
     const response = await result.response
