@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
-
 export async function POST(request: NextRequest) {
   try {
+    // Check if API key exists
+    if (!process.env.GEMINI_API_KEY) {
+      return NextResponse.json(
+        {
+          credibilityScore: 50,
+          verdict: 'uncertain',
+          analysis: 'API key not configured. Please add GEMINI_API_KEY environment variable in Vercel settings.',
+          keyPoints: ['Missing API key configuration'],
+          sources: [],
+        },
+        { status: 500 }
+      )
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
     const formData = await request.formData()
     const type = formData.get('type') as string
     const input = formData.get('input') as string
@@ -73,20 +86,29 @@ Respond ONLY with valid JSON, no additional text.`
     // Extract JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
-      throw new Error('Invalid response format')
+      throw new Error('Invalid response format from AI')
     }
 
     const analysis = JSON.parse(jsonMatch[0])
 
     return NextResponse.json(analysis)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Analysis error:', error)
+    
+    // Provide specific error messages
+    let errorMessage = 'Unable to complete analysis. Please try again.'
+    if (error.message?.includes('API key')) {
+      errorMessage = 'Invalid API key. Please check your GEMINI_API_KEY in Vercel settings.'
+    } else if (error.message?.includes('quota')) {
+      errorMessage = 'API quota exceeded. Please check your Google AI Studio quota.'
+    }
+    
     return NextResponse.json(
       {
         credibilityScore: 50,
         verdict: 'uncertain',
-        analysis: 'Unable to complete analysis. Please try again.',
-        keyPoints: ['Analysis failed due to technical error'],
+        analysis: errorMessage,
+        keyPoints: [`Error: ${error.message || 'Technical error'}`],
         sources: [],
       },
       { status: 500 }
