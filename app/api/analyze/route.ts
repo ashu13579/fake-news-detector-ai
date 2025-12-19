@@ -58,7 +58,13 @@ Consider:
 
 Respond ONLY with valid JSON, no additional text.`
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    // Use gemini-pro for text and gemini-pro-vision for images/videos
+    let model
+    if (file && (type === 'image' || type === 'video')) {
+      model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' })
+    } else {
+      model = genAI.getGenerativeModel({ model: 'gemini-pro' })
+    }
 
     let result
     if (file && (type === 'image' || type === 'video')) {
